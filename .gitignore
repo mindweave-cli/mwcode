@@ -1,0 +1,23 @@
+# Installed and built: made again by `npm install` and the build scripts.
+node_modules/
+dist/
+.stage/
+
+# Downloaded by the build scripts (Node, Electron for macOS, the signing tool), each checked against
+# its publisher's checksum on the way in.
+build/vendor/
+
+# Local working material that is not part of the app.
+archive/
+prototypes/
+/*.png
+build/*.preview.png
+CLAUDE.md
+.claude/
+
+# The What's new signing key never lives in this folder, and nothing like it should ever be added.
+*.pem
+
+*.log
+.DS_Store
+Thumbs.db

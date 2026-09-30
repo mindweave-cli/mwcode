@@ -1,0 +1,107 @@
+# Builds every package and attaches them to a GitHub release, when a version tag is pushed (v1.2.3).
+# The core comes from its own repository (mindweave-cli/mindweave), checked out next to the app,
+# which is the layout the build expects (`file:../Mindweave`).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: Branch or tag of mindweave-cli/mindweave to build with
+        default: main
+
+permissions:
+  contents: write
+
+env:
+  CORE_REF: ${{ inputs.core_ref || 'main' }}
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          want="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$want" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json ($want)."; exit 1
+          fi
+
+  windows:
+    needs: check-version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: mwcode-desktop }
+      - uses: actions/checkout@v4
+        with: { repository: mindweave-cli/mindweave, ref: '${{ env.CORE_REF }}', path: Mindweave }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+        working-directory: Mindweave
+      - run: npm ci && node node_modules/electron/install.js
+        working-directory: mwcode-desktop
+      - run: npm run dist
+        working-directory: mwcode-desktop
+      - uses: actions/upload-artifact@v4
+        with: { name: windows, path: mwcode-desktop/dist/*.exe, if-no-files-found: error }
+
+  linux:
+    needs: check-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: mwcode-desktop }
+      - uses: actions/checkout@v4
+        with: { repository: mindweave-cli/mindweave, ref: '${{ env.CORE_REF }}', path: Mindweave }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+        working-directory: Mindweave
+      - run: npm ci && node node_modules/electron/install.js
+        working-directory: mwcode-desktop
+      - run: npm run dist:linux
+        working-directory: mwcode-desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          if-no-files-found: error
+          path: |
+            mwcode-desktop/dist/*.deb
+            mwcode-desktop/dist/*.AppImage
+
+  # The Mac app is built and signed on Linux (see build/assemble-mac.js): no Mac runner needed.
+  mac:
+    needs: check-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: mwcode-desktop }
+      - uses: actions/checkout@v4
+        with: { repository: mindweave-cli/mindweave, ref: '${{ env.CORE_REF }}', path: Mindweave }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+        working-directory: Mindweave
+      - run: npm ci
+        working-directory: mwcode-desktop
+      - run: npm run dist:mac
+        working-directory: mwcode-desktop
+      - uses: actions/upload-artifact@v4
+        with: { name: mac, path: mwcode-desktop/dist/*-mac-arm64.zip, if-no-files-found: error }
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, linux, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: packages, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*
+          generate_release_notes: true

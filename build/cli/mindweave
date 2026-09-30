@@ -1,0 +1,11 @@
+#!/bin/sh
+# The mwcode CLI, installed with the app: its own Node runs the core that ships beside it.
+# $0 is usually a link on PATH (/usr/bin/mw, /usr/local/bin/mw), so the real folder comes from following
+# it, link by link (readlink -f is missing on older macOS).
+f=$0
+while [ -L "$f" ]; do
+    l=$(readlink "$f")
+    case $l in /*) f=$l ;; *) f=$(dirname "$f")/$l ;; esac
+done
+here=$(cd "$(dirname "$f")" && pwd)
+exec "$here/../node/node" "$here/../app/node_modules/mindweave/dist/index.js" "$@"

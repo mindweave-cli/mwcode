@@ -1,0 +1,22 @@
+#!/bin/sh
+# Starts mwcode on Linux. On a Wayland desktop it runs the app through XWayland: Electron can move a
+# frameless window on Wayland but not resize it, and through XWayland both work, as on X11. The choice
+# has to be made here because Electron picks the display system before the app's own code runs. An
+# --ozone-platform given by the user still wins.
+here=$(dirname "$(readlink -f "$0")")
+
+# WSL (Linux inside Windows): its graphics card is reached through Mesa's d3d12 driver, which neither
+# Mesa nor Chromium pick on their own there. Without it every frame, resizing included, is drawn by
+# the CPU. A normal Linux PC is left as it is.
+if [ -e /dev/dxg ]; then
+    export GALLIUM_DRIVER="${GALLIUM_DRIVER:-d3d12}"
+    set -- --ignore-gpu-blocklist "$@"
+fi
+
+case " $* " in
+    *" --ozone-platform="*|*" --ozone-platform "*) exec "$here/mwcode-bin" "$@" ;;
+esac
+if [ -n "$WAYLAND_DISPLAY" ] && [ -n "$DISPLAY" ]; then
+    exec "$here/mwcode-bin" --ozone-platform=x11 "$@"
+fi
+exec "$here/mwcode-bin" "$@"

@@ -1,0 +1,15 @@
+# Shell scripts run on Linux and macOS: Unix line endings, whatever the checkout machine uses.
+*.sh                 text eol=lf
+build/cli/mw         text eol=lf
+build/cli/mindweave  text eol=lf
+build/linux/mwcode   text eol=lf
+build/linux/apparmor-profile text eol=lf
+# Windows scripts keep Windows line endings.
+*.cmd                text eol=crlf
+*.ps1                text eol=crlf
+# Binary files are never touched.
+*.png  binary
+*.ico  binary
+*.icns binary
+*.bmp  binary
+*.woff2 binary

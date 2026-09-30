@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mwcode</title>
+<!-- The fonts are part of the app (assets/fonts): nothing is fetched to draw text. -->
+<link href="assets/fonts/fonts.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- The sidebar: the project and its sessions, and the app's own buttons. It hides only
+       when you hide it (the panel button or Ctrl+B); a narrow window opens it over the chat. -->
+  <aside class="side" id="side">
+    <nav class="rail">
+      <span class="rail-logo"><span class="brand-mark" role="img" aria-label="mwcode"></span></span>
+      <button class="rbtn active" id="rail-sessions" title="Sessions" aria-label="Sessions"><svg viewBox="0 1.25 16 16" fill="none"><path d="M2.5 4.5h11a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H7.2L4.5 14v-2.5H2.5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <div class="rail-grow"></div>
+      <button class="rbtn" id="feedback-btn" title="Send feedback" aria-label="Send feedback" aria-haspopup="dialog"><svg viewBox="2.29 2.79 19.43 19.43" fill="none"><path d="M20.5 12.2c0 4.3-3.8 7.6-8.5 7.6-1.3 0-2.5-.2-3.6-.7L3.5 20.5l1.4-3.9A7.3 7.3 0 0 1 3.5 12.2C3.5 7.9 7.3 4.5 12 4.5s8.5 3.4 8.5 7.7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 11h7M8.5 14h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      <button class="rbtn" id="open-settings" title="Settings" aria-label="Settings"><svg viewBox="-0.57 -0.57 25.14 25.14" fill="none"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </nav>
+    <div class="side-panel">
+      <div class="side-head">
+        <button class="proj-pick" id="proj-pick" title="Switch project">
+          <span class="lbl">frogemain-api</span>
+          <svg class="chev" viewBox="0 0 8 8"><path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+        </button>
+        <button class="side-ibtn side-pin" id="side-pin" title="Pin this session" aria-label="Pin this session"><svg viewBox="0 0 14 14" fill="none"><path d="M5 2.5H9M6 2.5V6L4 8.5H10L8 6V2.5M7 8.5V12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="side-ibtn" id="side-hide" title="Hide sidebar (Ctrl+B)" aria-label="Hide sidebar"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M6 2.5v11" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      </div>
+      <div class="side-projects" id="proj-menu" hidden>
+        <div class="proj-recent-list" id="proj-recent-list"></div>
+        <div class="side-projects-sep" id="proj-recent-sep" hidden></div>
+        <button class="qtab-menu-item" id="proj-open-other">Open other project&hellip;</button>
+      </div>
+      <div class="side-top">
+        <button class="sm-new" id="session-new">
+          <svg viewBox="0 0 14 14"><path d="M7 2.5V11.5M2.5 7H11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          New session
+        </button>
+        <label class="sm-search">
+          <svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9 9L12 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <input id="session-search" type="text" placeholder="Search sessions and projects" spellcheck="false" autocomplete="off">
+          <button class="sm-clear" id="session-search-clear" type="button" title="Clear (Esc)" aria-label="Clear the search" hidden><svg viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+        </label>
+      </div>
+      <div class="sm-list" id="session-list"></div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="side-scrim"></div>
+  <!-- Right-click on a project. -->
+  <div class="qtab-menu session-ctx" id="project-ctx" hidden>
+    <button class="qtab-menu-item" id="pc-rename"><svg viewBox="0 0 14 14" fill="none"><path d="M2.5 10.5L9 4L11 6L4.5 12.5L2 12L2.5 10.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg><span>Rename</span></button>
+    <button class="qtab-menu-item" id="pc-remove"><svg viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.5 4V2.8h3V4M4.2 4l.5 7.4h4.6l.5-7.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Remove from list</span></button>
+  </div>
+  <!-- Right-click on a session. -->
+  <div class="qtab-menu session-ctx" id="session-ctx" hidden>
+    <button class="qtab-menu-item" id="sc-pin"><svg viewBox="0 0 14 14" fill="none"><path d="M5 2.5H9M6 2.5V6L4 8.5H10L8 6V2.5M7 8.5V12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Pin</span></button>
+    <button class="qtab-menu-item" id="sc-rename"><svg viewBox="0 0 14 14" fill="none"><path d="M2.5 10.5L9 4L11 6L4.5 12.5L2 12L2.5 10.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg><span>Rename</span></button>
+  </div>
+
+  <div class="split chat-mode">
+
+    <!-- CHAT PANE -->
+    <div class="pane-chat">
+      <!-- Shown while something is dragged over the chat. -->
+      <div class="drop-overlay" id="drop-overlay" hidden>
+        <div class="drop-card">
+          <svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+          <div class="drop-title">Drop to attach</div>
+          <div class="drop-sub">Images, files or text go with your next message</div>
+        </div>
+      </div>
+      <div class="chat-head">
+        <button class="side-open" id="side-open" title="Show sidebar (Ctrl+B)" aria-label="Show sidebar" hidden><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M6 2.5v11" stroke="currentColor" stroke-width="1.3"/></svg></button>
+        <button class="session-pick" id="session-pick" title="Sessions">
+          <svg class="bubble" viewBox="0 1.25 14 14"><path d="M2.5 3.5h9a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H7.2L4.5 13v-2.5H2.5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linejoin="round"/></svg>
+          <span class="lbl name">Fix the refresh race</span>
+        </button>
+        <div class="qtabs" id="chat-qtabs">
+          <div class="qtab-wrap" data-key="mode">
+            <button class="tab" id="mode-pick" data-mode="lightning">
+              Lightning
+            </button>
+            <div class="qtab-menu mode-menu" id="mode-menu" hidden>
+              <div class="menu-label">Mode</div>
+              <button class="qtab-menu-item mode-item" data-mode="lightning">
+                <span class="mode-text"><span class="mode-name">Lightning</span><span class="mode-desc">auto-accept</span></span>
+                <svg class="mode-check" viewBox="0 0 12 12"><path d="M2.5 6.3L5 8.7L9.5 3.6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="qtab-menu-item mode-item" data-mode="architect">
+                <span class="mode-text"><span class="mode-name">Architect</span><span class="mode-desc">read-only · plan</span></span>
+                <svg class="mode-check" viewBox="0 0 12 12"><path d="M2.5 6.3L5 8.7L9.5 3.6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="qtab-menu-item mode-item" data-mode="sentinel">
+                <span class="mode-text"><span class="mode-name">Sentinel</span><span class="mode-desc">ask before acting</span></span>
+                <svg class="mode-check" viewBox="0 0 12 12"><path d="M2.5 6.3L5 8.7L9.5 3.6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="qtab-menu-sep"></div>
+              <button class="qtab-menu-remove mode-unpin" id="mode-remove"><svg viewBox="0 0 14 14"><path d="M5 2.5H9M6 2.5V6L4 8.5H10L8 6V2.5M7 8.5V12" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 2.5L11.5 11.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Remove from quick tabs</button>
+            </div>
+          </div>
+        </div>
+        <!-- Background shells, the CLI's [BG] bar: shown while anything runs.
+             Click for each command's state, its log, and a Stop button. -->
+        <div class="qtab-wrap shells-wrap" id="shells-wrap" hidden>
+          <button class="tab shells-chip" id="shells-chip" title="Background commands">
+            <span class="pulse-dot"></span><span id="shells-label">1 running</span>
+          </button>
+          <div class="qtab-menu shells-menu" id="shells-menu" hidden>
+            <div class="menu-label">Background commands</div>
+            <div id="shells-list"></div>
+          </div>
+        </div>
+        <!-- The usage-limit meter: present only while limits are on, and then always. -->
+        <div class="limit-meter" id="limit-meter" hidden tabindex="0" aria-label="Token limit">
+          <div class="lm-track"><div class="lm-fill" id="lm-fill"></div></div>
+          <span class="lm-pct" id="lm-pct"></span>
+          <span class="lm-msg" id="lm-msg"></span>
+          <div class="lm-tip" id="lm-tip" role="tooltip"></div>
+        </div>
+        <div class="tb-actions head-actions">
+          <button class="settings-btn has-update tb-update" id="tb-update" hidden title="An update is available">Update available</button>
+          <button class="run off" id="run-btn" aria-label="Run"><svg class="i-play" viewBox="5.52 3.87 14.76 14.76"><path d="M8.2 5.6c0-.9 1-1.5 1.8-1l8.3 5.4c.7.5.7 1.5 0 2L10 17.4c-.8.5-1.8-.1-1.8-1Z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.2" fill="currentColor"/></svg></button>
+          <span class="tb-div"></span>
+          <div class="tb-winctl">
+        <button id="btn-min" aria-label="Minimize"><svg viewBox="1.5 1.5 11 11"><path d="M2.5 7H11.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button id="btn-max" aria-label="Maximize"><svg viewBox="1.5 1.5 11 11"><rect x="3" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button>
+        <button class="win-close" id="btn-close" aria-label="Close"><svg viewBox="1.5 1.5 11 11"><path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </div>
+        </div>
+      </div>
+
+      <!-- Sub-agents working for this turn: Main plus one chip per agent, each
+           with what it is doing right now. Click (or ←/→ then Enter) to watch one. -->
+      <div class="agents-bar" id="agents-bar" role="tablist" aria-label="Agents" hidden></div>
+
+      <div class="chat-body">
+
+        <div class="thinking"><span class="spark"></span> Thought for 6s — tracing the refresh path</div>
+
+        <div class="receipt" data-detail="search">
+          <span class="bullet">●</span>
+          <span class="rt">Searched — "typescript in-flight promise deduplication"</span>
+          <span class="rmeta">4 results</span>
+        </div>
+
+        <div class="tool">
+          <div class="tool-head">
+            <svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M9 9L12 12" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Search — "typescript in-flight promise deduplication"
+            <svg class="chev" viewBox="0 0 8 8"><path d="M3 1.5L5.5 4L3 6.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tool-collapse"><div class="tool-body">
+            <div class="hit-l">stackoverflow.com — Deduplicating concurrent async calls</div>
+            <div class="dim-l">2.3k views · answered 2024</div>
+          </div></div>
+        </div>
+
+        <div class="msg">
+          <h3>Fixing the refresh race</h3>
+          <p>Two callers near expiry both saw a stale token and both fired
+          <code>refresh()</code> — the second call overwrote the first with a
+          token for a slightly earlier window, which is what was logging
+          people out mid-session.</p>
+        </div>
+
+        <div class="msg">
+          <p><b>What changed:</b></p>
+          <div class="list">
+            <div class="item"><b>Shared in-flight guard</b> — concurrent callers now await the same promise instead of each firing their own request.</div>
+            <div class="item"><b>Guard clears on settle</b> — the next expiry starts a fresh refresh rather than reusing a resolved one.</div>
+          </div>
+        </div>
+
+        <div class="receipt" data-detail="runFail">
+          <span class="bullet">●</span>
+          <span class="rt">Ran npm test -- tokenManager</span>
+          <span class="tag err">Failed</span>
+        </div>
+
+        <div class="tool">
+          <div class="tool-head">
+            <svg viewBox="0 0 14 14"><path d="M4.5 3.5L11 7L4.5 10.5V3.5Z" fill="currentColor"/></svg>
+            Run — npm test -- tokenManager
+            <span class="tag err">Failed</span>
+            <svg class="chev" viewBox="0 0 8 8"><path d="M3 1.5L5.5 4L3 6.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tool-collapse"><div class="tool-body">
+            <div class="dim-l">✓ refreshes once under 5 concurrent callers</div>
+            <div class="err-l">✕ clears the guard after resolution</div>
+            <div class="err-l" style="padding-left:14px">expected inflight to be null, got Promise</div>
+          </div></div>
+        </div>
+
+        <div class="msg"><p>Applying the fix:</p></div>
+
+        <div class="diffcard-wrap">
+          <div class="diffcard">
+            <svg viewBox="0 0 14 14"><path d="M2.5 10.5L9 4L11 6L4.5 12.5L2 12L2.5 10.5Z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            <span class="name">tokenManager.ts</span>
+            <span class="stat"><span class="a tnum">+3</span><span class="d tnum">−1</span></span>
+            <svg class="chev" viewBox="0 0 8 8"><path d="M3 1.5L5.5 4L3 6.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="diffcard-collapse"><div class="diffcard-body">
+            <div class="err-l">&minus; &nbsp;const next = await this.client.refresh(this.token);</div>
+            <div class="hit-l">+ &nbsp;this.inflight ??= this.client.refresh(this.token);</div>
+            <div class="hit-l">+ &nbsp;const next = await this.inflight.finally(() =&gt; this.inflight = null);</div>
+          </div></div>
+        </div>
+
+        <div class="review">
+          <svg viewBox="0 0 14 14"><rect x="2.5" y="2.5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M5 7L6.4 8.4L9 5.6" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+          <span class="t">1 file needs review</span>
+          <button class="undo">Undo</button>
+          <button class="keep">Keep</button>
+        </div>
+
+        <div class="receipt" data-detail="runPass">
+          <span class="bullet">●</span>
+          <span class="rt">Ran npm test -- tokenManager</span>
+          <span class="tag ok">Passed</span>
+        </div>
+
+        <div class="tool">
+          <div class="tool-head">
+            <svg viewBox="0 0 14 14"><path d="M4.5 3.5L11 7L4.5 10.5V3.5Z" fill="currentColor"/></svg>
+            Run — npm test -- tokenManager
+            <span class="tag ok">Passed</span>
+            <svg class="chev" viewBox="0 0 8 8"><path d="M3 1.5L5.5 4L3 6.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tool-collapse"><div class="tool-body">
+            <div class="ok-l">✓ refreshes once under 5 concurrent callers</div>
+            <div class="ok-l">✓ clears the guard after resolution</div>
+            <div class="ok-l">✓ serves the same token to all in-flight callers</div>
+          </div></div>
+        </div>
+
+      </div>
+
+      <!-- New, empty chat: the composer sits mid-pane under one quiet line, then
+           glides to the bottom on the first message (Chat view only). -->
+      <div class="chat-hero" id="chat-hero" aria-hidden="true">
+        <div class="chat-hero-clip"><div class="chat-hero-inner">
+          <span class="chat-hero-text">What should we work on<span id="chat-hero-in"> in <b id="chat-hero-project">this project</b></span>?</span>
+        </div></div>
+      </div>
+
+      <div class="composer">
+        <!-- A decision the agent is waiting on (Sentinel gate, ask_user). Docked
+             right above the input, where the CLI draws it, not a modal on top of
+             the conversation. Keyboard first: ↑/↓, Enter, 1-9, Esc. -->
+        <div class="approval-dock" id="approval-dock" role="dialog" aria-labelledby="approval-question" hidden>
+          <div class="ad-head">
+            <span class="ad-badge" id="approval-title">Permission Request</span>
+            <span class="ad-question" id="approval-question">Allow this?</span>
+          </div>
+          <div class="ad-detail" id="approval-detail" hidden></div>
+          <div class="ad-options" id="approval-options" role="listbox"></div>
+          <div class="ad-hint" id="approval-hint"></div>
+        </div>
+        <!-- Messages sent while the agent works, waiting to go in. They reach the chat
+             when they are actually sent; until then they live here. -->
+        <div class="queue-box" id="queue-box" hidden>
+          <span class="qb-label">Queued</span>
+          <div class="qb-list" id="qb-list"></div>
+          <div class="qb-actions">
+            <button class="qb-btn" id="qb-edit" title="Take it back to edit (↑)"><svg viewBox="0 0 16 16" fill="none"><path d="M10.6 2.9l2.5 2.5L6 12.5H3.5V10l7.1-7.1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Edit</button>
+            <button class="qb-btn primary" id="qb-send" title="Stop the agent and send this now"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8.5M8 4.5L11.5 8 8 11.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Send now</button>
+          </div>
+        </div>
+        <!-- The Marathon checklist: pinned above the streaming line, left-anchored. Grows
+             with the list up to a cap, then scrolls inside. Never takes focus. -->
+        <div class="marathon-box" id="marathon-box" role="button" tabindex="0" title="Open the marathon" hidden>
+          <span class="mb-title">Marathon</span>
+          <span class="mb-count" id="mb-count"></span>
+          <span class="mb-line" id="mb-line"></span>
+          <button class="mb-btn" id="mb-resume" hidden>Resume</button>
+          <button class="mb-btn" id="mb-close" hidden aria-label="Dismiss">Dismiss</button>
+          <svg class="mb-chev" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <!-- Scrolled up: back to the latest message in one click. A dot when something new arrived below. -->
+        <button class="jump-latest" id="jump-latest" type="button" title="Jump to the latest message" aria-label="Jump to the latest message" hidden><svg viewBox="0 0 14 14" fill="none"><path d="M7 2.5v8.5M3.5 7.5L7 11l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="jl-dot" hidden></span></button>
+        <div class="cbox">
+          <!-- Chat view's "agent is working" line — lives INSIDE the composer so
+               it's part of its layout (never overlaps the chat), and slides open
+               with a height transition. -->
+          <div class="cstatus-wrap" id="chat-status">
+            <div class="cstatus">
+              <span class="cs-spark"></span>
+              <span class="cs-label" id="cs-label">Thinking</span>
+              <span class="cs-time" id="cs-time">0s</span>
+              <span class="cs-tokens" id="cs-tokens" hidden></span>
+              <span class="cs-hint"><kbd>Esc</kbd> to stop</span>
+            </div>
+          </div>
+          <div class="attach-row" id="attach-row" hidden></div>
+          <textarea rows="1" id="composer-input" placeholder="Message mwcode…"></textarea>
+          <div class="crow">
+            <button class="cicon" id="attach-btn" title="Attach files or images" aria-label="Attach files or images"><svg viewBox="0 0 14 14"><path d="M7 2.5V11.5M2.5 7H11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+            <input type="file" id="attach-input" multiple hidden>
+
+            <button class="c-pick connect-pick" id="connect-pick" hidden>
+              <span class="lbl">Connect a provider</span>
+              <svg class="chev" viewBox="0 0 8 8"><path d="M3 1.5L5.5 4L3 6.5" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+            </button>
+
+            <div class="pick-wrap">
+              <button class="c-pick" id="think-pick">
+                <span class="lbl">Standard</span>
+                <svg class="chev" viewBox="0 0 8 8"><path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+              </button>
+              <div class="qtab-menu up left" id="think-menu" hidden></div>
+            </div>
+
+            <div class="pick-wrap">
+              <button class="c-pick" id="provider-pick">
+                <span class="lbl">DeepSeek</span>
+                <svg class="chev" viewBox="0 0 8 8"><path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+              </button>
+              <div class="qtab-menu up left" id="provider-menu" hidden></div>
+            </div>
+
+            <!-- Context meter: fills as the conversation grows; full is when it compacts itself. -->
+            <div class="ctx-meter" id="ctx-meter" role="meter" aria-label="Context used" aria-valuemin="0" aria-valuemax="100" tabindex="0" hidden>
+              <div class="ctx-track"><div class="ctx-fill" id="ctx-fill"></div></div>
+              <span class="ctx-pct" id="ctx-pct">0%</span>
+              <div class="ctx-tip" id="ctx-tip" role="tooltip">
+                <div class="ctx-tip-head"><span>Context</span><b id="ctx-tip-pct">0% full</b></div>
+                <div class="ctx-tip-bar"><div class="ctx-fill" id="ctx-tip-fill"></div></div>
+                <div class="ctx-tip-num" id="ctx-tip-num"></div>
+                <div class="ctx-tip-text">How much of the model's memory this conversation fills. When it's full, Mindweave compacts it automatically: older turns are summarized so the agent can keep going.</div>
+                <div class="ctx-tip-foot">
+                  <span class="ctx-tip-why" id="ctx-compact-why"></span>
+                  <button class="settings-btn" id="ctx-compact">Compact now</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Marathon: off by default. On, the next message is a goal the agent works
+                 toward on its own (it asks what it needs first, then does not stop to ask). -->
+            <button class="cicon marathon-toggle" id="marathon-btn" aria-pressed="false" aria-label="Marathon mode" title="Marathon: hand over a goal and let it run until it is done">
+              <svg viewBox="0 0 14 14" fill="none"><path d="M3.5 12.5V1.8M3.5 2.4h7l-1.6 2.6 1.6 2.6h-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+
+            <div class="spacer"></div>
+
+            <!-- The model and send stay together: in a narrow pane they wrap as one. -->
+            <div class="crow-end">
+            <div class="pick-wrap">
+              <button class="c-pick" id="model-pick">
+                <span class="lbl">DeepSeek V4.1 Flash</span>
+                <svg class="chev" viewBox="0 0 8 8"><path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+              </button>
+              <div class="qtab-menu up" id="model-menu" hidden></div>
+            </div>
+
+            <button class="send" id="send-btn" aria-label="Send">
+              <svg id="send-icon" viewBox="0 0 13 13"><path d="M2 6.5H11M11 6.5L6.5 2M11 6.5L6.5 11" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+              <svg id="stop-icon" viewBox="0 0 13 13" hidden><rect x="3" y="3" width="7" height="7" rx="1.3" fill="currentColor"/></svg>
+            </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-bottom-space" aria-hidden="true"></div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="settings-overlay" id="settings-overlay" hidden>
+  <div class="settings-modal">
+    <div class="settings-head">
+      <h2>Settings</h2>
+      <button class="settings-close" id="settings-close" aria-label="Close settings"><svg viewBox="0 0 14 14"><path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-nav">
+        <button class="active" data-panel="general">
+          <svg viewBox="0 0 16 16"><path d="M2 5h7M12 5h2M2 11h2M7 11h7" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><circle cx="9.5" cy="5" r="1.6" stroke="currentColor" stroke-width="1.15" fill="var(--glass)"/><circle cx="4.5" cy="11" r="1.6" stroke="currentColor" stroke-width="1.15" fill="var(--glass)"/></svg>
+          General
+        </button>
+        <button data-panel="providers">
+          <svg viewBox="0 0 16 16"><path d="M6 2v3M10 2v3M4.5 5h7v3a3.5 3.5 0 0 1-7 0V5Z" stroke="currentColor" stroke-width="1.15" fill="none" stroke-linejoin="round"/><path d="M8 11.5V14" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/></svg>
+          Providers
+        </button>
+        <button data-panel="mcp">
+          <svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="3.4" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="2.5" y="7" width="11" height="3.4" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="2.5" y="11.5" width="11" height="2.2" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+          MCP Servers
+        </button>
+        <button data-panel="permissions">
+          <svg viewBox="0 0 16 16"><path d="M8 1.8l5 1.9v3.9c0 3.1-2.1 5.5-5 6.6-2.9-1.1-5-3.5-5-6.6V3.7l5-1.9Z" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linejoin="round"/><path d="M5.8 8l1.5 1.5L10.4 6.4" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Permissions
+        </button>
+        <button data-panel="usage">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.8" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Tokens
+        </button>
+        <button data-panel="rules">
+          <svg viewBox="0 0 16 16"><path d="M3 4h1.5M3 8h1.5M3 12h1.5M6.5 4h6.5M6.5 8h6.5M6.5 12h6.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          Rules &amp; Skills
+        </button>
+        <button data-panel="quicktabs">
+          <svg viewBox="0 0 16 16"><path d="M6 2.5h4l.5 4.5L13 9.5v1H3v-1l2.5-2.5L6 2.5Z" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linejoin="round"/><path d="M8 10.5V14" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          Quick Tabs
+        </button>
+        <button data-panel="analytics">
+          <svg viewBox="0 0 16 16"><path d="M2.5 13.5h11" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><rect x="3.5" y="8" width="2.2" height="3.8" rx=".6" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="6.9" y="5" width="2.2" height="6.8" rx=".6" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="10.3" y="2.5" width="2.2" height="9.3" rx=".6" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+          Analytics
+        </button>
+        <button data-panel="whatsnew">
+          <svg viewBox="0 0 16 16"><path d="M8 2l1.4 3.6L13 7l-3.6 1.4L8 12l-1.4-3.6L3 7l3.6-1.4L8 2Z" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linejoin="round"/></svg>
+          What's new
+        </button>
+        <button data-panel="about">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.8" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M8 7.2V11.3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="5" r=".2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          About
+        </button>
+      </div>
+
+      <div class="settings-panel active" id="panel-general">
+        <div class="settings-section-title">General</div>
+        <div class="settings-section-desc">How mwcode looks and behaves day to day.</div>
+
+        <div class="settings-group">About you</div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">What should we call you?</span><span class="d">The agent uses it where it fits</span></div>
+          <input class="settings-input" id="pref-name" type="text" maxlength="60" placeholder="Your name" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Theme</span><span class="d" id="pref-theme-desc">Follows the system: light or dark, whichever it is set to</span></div>
+          <div class="settings-seg" id="pref-theme">
+            <button data-theme="system" class="active">System</button>
+            <button data-theme="light">Light</button>
+            <button data-theme="dark">Toned</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Experience level</span><span class="d" id="pref-level-desc"></span></div>
+          <div class="settings-seg" id="pref-level">
+            <button data-v="beginner">Beginner</button>
+            <button data-v="intermediate">Intermediate</button>
+            <button data-v="expert">Expert</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Reply style</span><span class="d" id="pref-style-desc"></span></div>
+          <div class="settings-seg" id="pref-style">
+            <button data-v="concise">Concise</button>
+            <button data-v="balanced">Balanced</button>
+            <button data-v="detailed">Detailed</button>
+          </div>
+        </div>
+        <div class="settings-row notes-row">
+          <div class="settings-row-label"><span class="t">Project MINDWEAVE.md</span><span class="d" id="notes-desc">The project's notes, read by the agent every session</span></div>
+          <div class="notes-card" id="notes-card" role="button" tabindex="0" aria-label="Edit the project's MINDWEAVE.md">
+            <div class="notes-card-head">
+              <span class="notes-card-ico"><svg viewBox="0 0 16 16" fill="none"><path d="M4 1.8h5.2L12.5 5v9.2H4z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M9 1.8V5h3.5M6 8h4.5M6 10.5h4.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></span>
+              <span class="notes-card-name">MINDWEAVE.md</span>
+              <span class="notes-card-meta" id="notes-meta"></span>
+              <span class="notes-card-actions">
+                <button class="settings-btn ghost" id="notes-upload">Upload</button>
+                <button class="settings-btn" id="notes-edit">Edit</button>
+              </span>
+            </div>
+            <pre class="notes-card-preview" id="notes-preview"></pre>
+          </div>
+        </div>
+
+        <div class="settings-group">App</div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Send with</span><span class="d" id="pref-send-desc">Enter sends, Shift+Enter adds a new line</span></div>
+          <div class="settings-seg" id="pref-send">
+            <button data-send="enter" class="active">Enter</button>
+            <button data-send="ctrl">Ctrl+Enter</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Launch at login</span><span class="d">Open mwcode when you sign in</span></div>
+          <div class="sw" id="pref-login" role="switch" aria-label="Launch at login"></div>
+        </div>
+
+        <div class="settings-group">Run button</div>
+        <div id="run-cmd-row"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-providers">
+        <div id="providers-list-view">
+        <div class="settings-section-title">Providers</div>
+        <div class="settings-section-desc">Connect the model providers mwcode can use.</div>
+
+        <div class="settings-search">
+          <svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.2 9.2L12.5 12.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <input type="text" id="provider-search" placeholder="Search providers or models…">
+        </div>
+
+        <div class="settings-list" id="provider-list">
+          <div class="settings-empty" id="provider-empty" hidden>No providers or models match your search.</div>
+        </div>
+        </div>
+        <div class="provider-detail" id="provider-detail" hidden></div>
+      </div>
+
+      <div class="settings-panel" id="panel-mcp">
+        <div id="mcp-root"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-permissions">
+        <div id="perm-root"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-usage">
+        <div id="usage-root"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-rules">
+        <div id="rs-root"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-quicktabs">
+        <div id="qt-root"></div>
+      </div>
+
+      <div class="settings-panel" id="panel-analytics">
+        <div class="settings-section-title">Analytics</div>
+        <div class="settings-section-desc">Lets us count how many people use Mindweave. It's anonymous, and you decide whether it's on.</div>
+
+        <div class="settings-group">Usage count</div>
+        <div class="settings-row">
+          <div class="settings-row-label"><span class="t">Send an anonymous usage count</span><span class="d" id="an-desc">Sent once each time Mindweave opens</span></div>
+          <div class="sw" id="an-switch" role="switch" aria-label="Send an anonymous usage count"></div>
+        </div>
+
+        <div class="settings-group">What is sent</div>
+        <div class="an-facts">
+          <div class="an-fact"><span class="an-k">Sent</span><span class="an-v">A random id made on this computer, and the version number. Nothing else.</span></div>
+          <div class="an-fact"><span class="an-k">Never sent</span><span class="an-v">Your conversations, code, file names, API keys, or the models you use.</span></div>
+          <div class="an-fact"><span class="an-k">When</span><span class="an-v">Once each time Mindweave opens. The command line sends the same count, and this switch covers both.</span></div>
+        </div>
+
+        <div class="settings-group">Check it yourself</div>
+        <div class="an-open">Mindweave is open source, so the code that sends this is public, and so are the numbers it produces: the website shows the same counts to everyone.</div>
+        <div class="pd-links an-links">
+          <button class="pd-link" data-url="https://github.com/mindweave-cli/mindweave/blob/main/src/cli/analytics.ts">The code that sends it</button>
+          <button class="pd-link" data-url="https://mindweavedev.netlify.app/">The public numbers</button>
+        </div>
+      </div>
+
+      <div class="settings-panel" id="panel-whatsnew"></div>
+
+      <div class="settings-panel" id="panel-about">
+        <div class="about-mark" role="img" aria-label="mwcode"></div>
+        <div class="about-name">mwcode</div>
+        <div class="about-tag">A fast, model-adaptive coding agent that runs on your own machine.<br>You bring your own key. Nothing goes anywhere else.</div>
+
+        <div class="about-version-row">
+          <div class="about-versions" id="about-versions"><div class="about-version">Version —</div></div>
+        </div>
+        <div class="about-version-note" id="about-version-note">mwcode looks for news and new versions in a signed file on GitHub.</div>
+
+        <!-- macOS only (renderer.js shows it): the mw command in the Terminal. The zip has no installer to do it. -->
+        <div class="settings-row" id="about-cli" hidden>
+          <div class="settings-row-label"><span class="t">Command line</span><span class="d" id="about-cli-desc">Use mwcode in the Terminal as mw</span></div>
+          <button class="settings-btn" id="about-cli-btn">Add to Terminal</button>
+        </div>
+
+        <div class="settings-group">The idea</div>
+        <div class="an-open about-idea">
+          Most of a coding agent's context budget goes on scaffolding the model never needed. mwcode
+          keeps prompts thin and leaves the room for the model to actually reason about your code. It
+          runs entirely on your machine: no backend, no telemetry beyond the anonymous count you can
+          turn off, and no account.
+        </div>
+
+        <div class="settings-group">Elsewhere</div>
+        <div class="pd-links about-links">
+          <button class="pd-link" data-url="https://mindweavedev.netlify.app/">Website <svg viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5H9.5V7.5M9.2 2.8L3 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="pd-link" data-url="https://github.com/mindweave-cli/mwcode">GitHub <svg viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5H9.5V7.5M9.2 2.8L3 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="pd-link" data-url="https://x.com/mindweavecli">X <svg viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5H9.5V7.5M9.2 2.8L3 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+
+        <div class="settings-group">License</div>
+        <div class="an-open">
+          Open source under the <button class="about-inline-link" data-url="https://github.com/mindweave-cli/mwcode/blob/main/LICENSE">Apache License 2.0</button> — the code is public, and so is what it does.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback: a message to the maintainer. Outside the titlebar so the titlebar's
+     button styles and drag region don't reach it; placed under its button by JS. -->
+<div class="fb-pop" id="fb-pop" role="dialog" aria-labelledby="fb-title" hidden>
+  <div class="fb-form" id="fb-form">
+    <div class="fb-title" id="fb-title">Send feedback</div>
+    <div class="fb-sub">Goes straight to the maintainer. No account needed.</div>
+    <textarea class="fb-text" id="fb-text" rows="5" placeholder="What's working, what isn't, what you'd like…" spellcheck="true"></textarea>
+    <div class="fb-note" id="fb-note"></div>
+    <div class="fb-error" id="fb-error" hidden></div>
+    <div class="fb-actions">
+      <span class="fb-count" id="fb-count"></span>
+      <button class="settings-btn ghost" id="fb-cancel">Cancel</button>
+      <button class="settings-btn" id="fb-send">Send</button>
+    </div>
+  </div>
+  <div class="fb-done" id="fb-done" hidden>
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.3l2.7 2.7L16 9.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>Sent. Thank you, it goes straight to the maintainer.</div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirm-overlay" hidden>
+  <div class="confirm-modal">
+    <div class="confirm-text" id="confirm-text">Remove this from quick tabs?</div>
+    <div class="confirm-actions">
+      <button class="settings-btn ghost" id="confirm-no">No</button>
+      <button class="settings-btn danger" id="confirm-yes">Yes, remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Attachment viewer: an image full size, a file's contents, or a paste in
+     an editor. Opened from the tray above the composer; Esc closes. -->
+<div class="att-viewer" id="att-viewer" hidden>
+  <div class="att-viewer-card" role="dialog" aria-modal="true" aria-labelledby="att-viewer-name">
+    <div class="att-viewer-head">
+      <span class="att-viewer-ico" id="att-viewer-ico"></span>
+      <div class="att-viewer-title"><span class="att-viewer-name" id="att-viewer-name"></span><span class="att-viewer-meta" id="att-viewer-meta"></span></div>
+      <button class="att-viewer-close" id="att-viewer-close" aria-label="Close"><svg viewBox="0 0 10 10"><path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="att-viewer-body" id="att-viewer-body"></div>
+    <div class="att-viewer-foot" id="att-viewer-foot" hidden>
+      <span class="att-viewer-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save</span>
+      <button class="att-btn" id="att-viewer-cancel">Cancel</button>
+      <button class="att-btn primary" id="att-viewer-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="node_modules/marked/lib/marked.umd.js"></script>
+<script src="providerInfo.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>

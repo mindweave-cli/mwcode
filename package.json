@@ -1,0 +1,138 @@
+{
+  "name": "mwcode-desktop",
+  "version": "0.1.0",
+  "description": "mwcode desktop app",
+  "homepage": "https://github.com/mindweave-cli/mwcode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mindweave-cli/mwcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mindweave-cli/mwcode/issues"
+  },
+  "license": "Apache-2.0",
+  "desktopName": "mwcode.desktop",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "node build/brand-electron.js",
+    "stage": "node build/stage.js",
+    "dist": "node build/stage.js && node build/assemble.js && electron-builder --win nsis --x64 --prepackaged dist/win-unpacked",
+    "dist:linux": "node build/stage.js && node build/assemble-linux.js && electron-builder --linux deb AppImage --x64 --prepackaged dist/linux-unpacked",
+    "dist:mac": "node build/stage.js darwin arm64 && node build/assemble-mac.js arm64",
+    "check:styles": "node scripts/check-styles.mjs",
+    "test": "node --test ui-store.test.mjs news/feed.test.mjs"
+  },
+  "dependencies": {
+    "koffi": "^3.3.2",
+    "marked": "^15.0.12",
+    "mindweave": "file:../Mindweave"
+  },
+  "devDependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "rcedit": "^4.0.1"
+  },
+  "allowScripts": {
+    "electron@44.4.5": true
+  },
+  "build": {
+    "appId": "com.mindweave.mwcode",
+    "productName": "mwcode",
+    "copyright": "Copyright © Mindweave contributors. Apache License 2.0.",
+    "directories": {
+      "app": ".stage/app",
+      "output": "dist"
+    },
+    "electronVersion": "44.4.5",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "executableName": "mwcode",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "selectPerMachineByDefault": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "mwcode",
+      "uninstallDisplayName": "mwcode",
+      "installerIcon": "build/installer-icon.ico",
+      "uninstallerIcon": "build/installer-icon.ico",
+      "installerHeaderIcon": "build/installer-icon.ico",
+      "installerSidebar": "build/installer-sidebar.bmp",
+      "uninstallerSidebar": "build/installer-sidebar.bmp",
+      "license": "../Mindweave/LICENSE",
+      "include": "build/installer.nsh",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "mwcode-Setup-${version}.exe"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "executableName": "mwcode",
+      "category": "Development",
+      "synopsis": "Coding agent",
+      "description": "mwcode: the Mindweave coding agent, as a desktop app. Includes the mw command line.",
+      "maintainer": "Mindweave contributors",
+      "vendor": "Mindweave",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "mwcode"
+        }
+      }
+    },
+    "deb": {
+      "packageName": "mwcode",
+      "afterInstall": "build/linux/after-install.sh",
+      "afterRemove": "build/linux/after-remove.sh",
+      "depends": [
+        "libgtk-3-0 | libgtk-3-0t64",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0 | libatspi2.0-0t64",
+        "libuuid1",
+        "libsecret-1-0",
+        "libasound2 | libasound2t64",
+        "libgbm1"
+      ],
+      "artifactName": "mwcode_${version}_amd64.deb",
+      "appArmorProfile": "build/linux/apparmor-profile"
+    },
+    "appImage": {
+      "artifactName": "mwcode-${version}-x86_64.AppImage"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# On every push and pull request: the app's files parse, its tests pass, and the stylesheet follows
+# DESIGN.md. Packaging is left to release.yml.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: Every script parses
+        run: for f in main.js preload.js renderer.js providerInfo.js recordings.js ui-store.js build/*.js news/*.js; do node --check "$f"; done
+      - name: Tests
+        run: npm test
+      - name: Styles follow DESIGN.md
+        run: npm run check:styles
