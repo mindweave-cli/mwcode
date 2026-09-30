@@ -4420,7 +4420,7 @@
   }
 
   // ── Files, folders and sites in what the agent says ────────────────────────
-  // A path in inline code (`src/bus.ts`, `C:\Projects\Menteus\`), a path at the start of a line
+  // A path in inline code (`src/bus.ts`, `C:\Projects\app\`), a path at the start of a line
   // in a plain code block, and every web link get the same open button the tool rows have.
   // A path becomes one only once it is found on disk, so nothing offers to open what is not
   // there. Click: a file in your editor (at `:line` when given), a folder in Explorer, a site in

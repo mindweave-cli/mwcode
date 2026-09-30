@@ -10,8 +10,7 @@ All values live in `styles.css`. Colours are the `:root` tokens (`--text`, `--mu
 
 ## 1. One screen
 
-- The app is **one chat screen** plus a sidebar. There is no split view (it was removed for v1
-  and archived in `C:\Projects\frogemain\archive\workbench-2026-09-29`).
+- The app is **one chat screen** plus a sidebar. There is no split view (it was removed for 1.0).
 - **The sidebar hides only when the user hides it** (its panel button, Ctrl+B, or a click on
   the scrim). Nothing hides it automatically, including the agent starting work. A window
   under 820px opens it floating over the chat.
@@ -407,8 +406,8 @@ of those is grey. One family of states, all outlines, **never a fill**:
   checks again whenever Settings closes. A first key for a provider other than the default model's moves
   the chat onto that provider's first model, so the composer never offers a model without a key.
 - **Startup order**: the window is created first and the core loads alongside it (`turnRunner()` also
-  loads the config); the page's first question waits for it. On this PC Electron itself takes ~1 s before
-  any app code runs (Windows Defender checks the 235 MB exe on every start); the app's own part is ~0.4 s.
+  loads the config); the page's first question waits for it. On a typical Windows PC Electron itself takes
+  ~1 s before any app code runs (Windows Defender checks the 235 MB exe on every start); the app's own part is ~0.4 s.
 
 ## 27. The window on each system (Windows, Linux, macOS)
 
