@@ -6,7 +6,8 @@ const os = require('os');
 
 // One data folder, run from source or installed. Installed, the app is named "mwcode", which would
 // otherwise give it a new, empty folder and lose the saved window, drafts and What's new state.
-app.setPath('userData', path.join(app.getPath('appData'), 'mwcode-desktop'));
+// A source run can be pointed at a throwaway folder (MWCODE_DATA_DIR) so testing never touches real data.
+app.setPath('userData', (!app.isPackaged && process.env.MWCODE_DATA_DIR) || path.join(app.getPath('appData'), 'mwcode-desktop'));
 
 // One copy at a time: opening mwcode again (a second click, or a login start on top of a restored
 // one) brings the open window forward instead of starting another app on the same data.
@@ -22,15 +23,17 @@ app.on('second-instance', () => {
 // macOS: an app opened from the Dock or Finder gets a bare PATH (/usr/bin:/bin:/usr/sbin:/sbin), not your
 // terminal's, so the agent would not find Homebrew's, nvm's or anything else's tools. Your login shell is
 // asked for it once, in the background, and what it adds is put in front.
+let loginPathReady = Promise.resolve();
 if (process.platform === 'darwin') {
-  require('child_process').execFile(process.env.SHELL || '/bin/zsh', ['-ilc', 'printf "\n__MWPATH__%s__MWPATH__" "$PATH"'],
+  loginPathReady = new Promise((done) => require('child_process').execFile(process.env.SHELL || '/bin/zsh', ['-ilc', 'printf "\n__MWPATH__%s__MWPATH__" "$PATH"'],
     { timeout: 5000, env: { ...process.env, DISABLE_AUTO_UPDATE: 'true' } }, (_err, out) => {
+      done();
       const m = /__MWPATH__(.*)__MWPATH__/.exec(String(out || ''));
       if (!m) return;
       const seen = new Set();
       process.env.PATH = [...m[1].split(':'), ...(process.env.PATH || '').split(':')]
         .filter((p) => p && !seen.has(p) && seen.add(p)).join(':');
-    });
+    }));
 }
 // macOS: quitting (Cmd+Q, the menu, the Dock) closes the window for real; the red button only hides it.
 let quitting = false;
@@ -54,7 +57,28 @@ let newsFeed = null;
 const { createUpdateService } = require('./updater/updateService');
 const { PUBLIC_KEY: UPDATE_PUBLIC_KEY } = require('./updater/updateKey');
 let updater = null;
-// What the agent saw while testing an app, kept for replay (see recordings.js).
+// The terminal version that really runs on this computer (see updater/cliUpdate.js). The app carries its
+// own copy, but the `mw` a person types is whichever comes first on their PATH, so judging "is there a
+// newer one" by the bundled copy was wrong for anyone who installed it with npm.
+const cliUpdate = require('./updater/cliUpdate');
+let userCli = null;
+let cliDetected = Promise.resolve();
+let cliUpdating = null;
+const cliOpts = () => ({ bundledDir: app.isPackaged ? path.join(process.resourcesPath, 'bin') : null });
+function detectCliNow() {
+  // On a Mac the real PATH arrives a moment after launch, and looking before it would miss an npm install.
+  cliDetected = loginPathReady.then(() => cliUpdate.detectCli(cliOpts())).then((s) => { userCli = s; }).catch(() => {});
+  return cliDetected;
+}
+const cliVersionOr = (fallback) => userCli?.version || fallback;
+// What the news feed shows depends on the versions, so it is sent again whenever they change.
+function pushFeed() {
+  if (!newsFeed) return;
+  Promise.resolve(newsFeed.get()).then((result) => {
+    for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('feed:updated', result);
+  }).catch(() => {});
+}
+// What the app saw while testing an app, kept for replay (see recordings.js).
 const recorder = createRecorder(path.join(app.getPath('userData'), 'recordings'));
 const MAX_RECENT_PROJECTS = 100;
 
@@ -1005,9 +1029,30 @@ function createWindow() {
   // delivery by what the form answered, not by the status code.
   ipcMain.handle('feedback:info', async () => {
     const { appVersion, MAX_MESSAGE, ISSUES_URL } = await turnRunner();
-    // The app has its own version. The core engine is the mindweave package, and the CLI the app
-    // installs is that same package, so those two read the same number.
-    return { version: appVersion(), appVersion: app.getVersion(), coreVersion: appVersion(), cliVersion: appVersion(), platform: process.platform, max: MAX_MESSAGE, issuesUrl: ISSUES_URL };
+    await cliDetected;
+    // The app has its own version, and the core engine is the mindweave package inside it. The command
+    // line is the one that really runs in a terminal here, which may be an npm install of a different
+    // version; it falls back to the app's own copy when none is found.
+    return {
+      version: appVersion(), appVersion: app.getVersion(), coreVersion: appVersion(), cliVersion: cliVersionOr(appVersion()),
+      cliSource: userCli?.source || 'none', cliCanUpdate: Boolean(userCli?.canUpdate),
+      platform: process.platform, max: MAX_MESSAGE, issuesUrl: ISSUES_URL,
+    };
+  });
+  // Update the npm-installed command line from inside the app: fixed arguments, one run at a time.
+  ipcMain.handle('cli:update', async () => {
+    if (!cliUpdating) {
+      cliUpdating = cliUpdate.updateCli(userCli, cliOpts())
+        .then((r) => {
+          if (r.ok) { userCli = r.state; return { ok: true, version: r.state.version }; }
+          return { ok: false, error: r.error };
+        })
+        .catch((e) => ({ ok: false, error: String(e?.message || e) }))
+        .finally(() => { cliUpdating = null; });
+    }
+    const out = await cliUpdating;
+    if (out.ok) pushFeed();
+    return out;
   });
   ipcMain.handle('feedback:send', async (_e, text) => {
     const { buildFeedback, refuseReason, sendFeedback, appVersion } = await turnRunner();
@@ -1870,14 +1915,23 @@ app.whenReady().then(async () => {
 
   newsFeed = createFeedService({
     dir: app.getPath('userData'),
-    versions: () => ({ app: app.getVersion(), core: appVersion(), cli: appVersion() }),
+    versions: () => ({ app: app.getVersion(), core: appVersion(), cli: cliVersionOr(appVersion()) }),
     publicKey: NEWS_PUBLIC_KEY,
+    // Preview a feed before pushing it: `MWCODE_NEWS_URL=http://127.0.0.1:8123 npm start` reads
+    // feed.json and feed.sig from there. Source runs only; the signature is still checked.
+    ...(!app.isPackaged && process.env.MWCODE_NEWS_URL
+      ? { urls: [{ json: `${process.env.MWCODE_NEWS_URL}/feed.json`, sig: `${process.env.MWCODE_NEWS_URL}/feed.sig` }] }
+      : {}),
     onUpdate: (result) => {
       for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('feed:updated', result);
     },
   });
   feedReady(newsFeed);
-  newsFeed.start();
+  // The first check waits a moment for the terminal version to be read, so it is judged against the
+  // copy that really runs. Never longer than a few seconds, whatever npm is doing.
+  detectCliNow();
+  Promise.race([cliDetected, new Promise((r) => setTimeout(r, 4000))]).then(() => newsFeed.start());
+  cliDetected.then(pushFeed);
 
   updater = createUpdateService({
     dir: app.getPath('userData'),

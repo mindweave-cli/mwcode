@@ -2,6 +2,20 @@
 
 All notable changes to the mwcode desktop app. The engine it runs on has its own changelog in [mindweave](https://github.com/mindweave-cli/mindweave).
 
+## 1.0.1
+
+### Updates
+- The command line is now judged by the copy you actually run in a terminal, not by the one inside the app. Before, an app could say a terminal update was out when yours was already current.
+- A terminal installed with npm now updates from inside the app: press Update and the app runs npm for you, with no browser and no copying a command. If npm cannot do it, the message says why in plain words.
+- The app's own copy of the command line is never offered as an update. It moves with the app.
+- On Linux and macOS the app's own `mw` (put in place as a link by the .deb or by Settings, About) is recognised as the app's, and on a Mac the check waits for your real PATH, so Homebrew and nvm installs are found.
+
+### What's new
+- Items from the same day are shown in the order they were published, newest on top.
+
+### Includes
+- Mindweave 3.0.1 (the terminal now shows its name as Mindweave 2).
+
 ## 1.0.0
 
 First public release of mwcode for Windows, Linux and macOS.

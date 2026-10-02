@@ -85,14 +85,17 @@ function createFeedService({ dir, versions, publicKey, onUpdate = () => {}, fetc
       if (!core.verifyFeed(json, state.feed.sig, publicKey)) return base;
       const parsed = core.parseFeed(json);
       const items = core.applicable(parsed.items, { versions: versions(), now: now() })
-        .map((it) => ({
+        .map((it, pos) => ({
           ...it,
           date: fmtDate(it.date),
           _sort: it.date,
+          _pos: pos,
           images: it.images.map((im) => ({ src: imageUri(im.sha256), alt: im.alt, ...(im.caption ? { caption: im.caption } : {}) })).filter((im) => im.src),
         }))
-        .sort((a, b) => (a._sort < b._sort ? 1 : a._sort > b._sort ? -1 : a.id < b.id ? -1 : 1))
-        .map(({ _sort, ...rest }) => rest);
+        // Newest first. Items from the same day keep the feed's own order, which is written newest
+        // first, so the latest one is always on top.
+        .sort((a, b) => (a._sort < b._sort ? 1 : a._sort > b._sort ? -1 : a._pos - b._pos))
+        .map(({ _sort, _pos, ...rest }) => rest);
       return { ...base, items };
     } catch {
       return base;

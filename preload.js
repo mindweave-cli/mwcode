@@ -76,6 +76,7 @@ contextBridge.exposeInMainWorld('mw', {
   updateCheck: () => ipcRenderer.invoke('update:check'),
   updateStart: () => ipcRenderer.invoke('update:start'),
   updateRestart: () => ipcRenderer.invoke('update:restart'),
+  cliUpdate: () => ipcRenderer.invoke('cli:update'),
   onUpdateChanged: (cb) => {
     const listener = (_event, data) => cb(data);
     ipcRenderer.on('update:changed', listener);

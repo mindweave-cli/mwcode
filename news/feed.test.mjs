@@ -126,6 +126,12 @@ test('service: the newest item is on top, whatever order the feed lists them in'
   assert.deepEqual(r.items.map((i) => i.id), ['new', 'mid', 'old']);
 });
 
+test('service: items from the same day keep the feed order, newest first, whatever their ids', async () => {
+  const { svc } = service(publish([item({ id: 'zz-latest', date: '2026-10-02' }), item({ id: 'mm-middle', date: '2026-10-02' }), item({ id: 'aa-first', date: '2026-10-02' })], 1));
+  const r = await svc.refresh();
+  assert.deepEqual(r.items.map((i) => i.id), ['zz-latest', 'mm-middle', 'aa-first']);
+});
+
 test('service: a good feed is shown, formatted, and announced once', async () => {
   const { svc, updates } = service(publish([item({ id: 'x' })], 1));
   const r = await svc.refresh();

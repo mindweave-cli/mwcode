@@ -1572,7 +1572,9 @@
   const WN_READ_KEY = 'mw:news-read'; // the old place; read once and moved to the main process
   // What the feed last delivered, already cleaned.
   let wnRemote = [];
-  const wnItems = () => wnRemote;
+  // An item whose update just finished stays on screen, saying so, until you go Back.
+  let wnHold = null;
+  const wnItems = () => (wnHold && !wnRemote.some((i) => i.id === wnHold.id) ? [wnHold, ...wnRemote] : wnRemote);
   // The unread number on the tab, and a dot on the Settings gear while anything is unread.
   function showUpdateDots() {
     const n = wnUnread();
@@ -1637,6 +1639,7 @@
   // Rows fade in only when the page is opened (the tab, or Back from an item). A redraw from the switch,
   // a filter or a feed update leaves them still.
   function renderWhatsNew(enter = false) {
+    if (!wnOpenId) wnHold = null;
     const items = wnItems();
     const item = items.find((i) => i.id === wnOpenId);
     if (item) return renderWnSummary(item);
@@ -1705,15 +1708,19 @@
         (sec.list ? '<ul class="wn-points">' + sec.list.map((p) => '<li>' + escapeHtml(p) + '</li>').join('') + '</ul>' : '')
       )).join('') +
       '<div class="wn-actions">' +
-        (item.remote && item.kind === 'update' && item.link ? '<button class="settings-btn wn-get">' + (item.version ? 'Get ' + escapeHtml(item.version) : 'Open the release') + '</button>' : '') +
+        (item._done ? '<div class="wn-sum-text wn-sec-text">Updated to ' + escapeHtml(item._done) + '. The command line is up to date.</div>' : '') +
+        (item.remote && item.kind === 'update' && item.area === 'cli' && aboutInfo?.cliCanUpdate && !item._done ? '<button class="settings-btn wn-cliupd"' + (item._busy ? ' disabled>Updating…' : '>Update now') + '</button>' : '') +
+        (cliErr && item.area === 'cli' && !item._done ? '<div class="wn-sum-text wn-sec-text">The update did not finish: ' + escapeHtml(cliErr) + '</div>' : '') +
+        (item.remote && item.kind === 'update' && item.link && !item._done && !(item.area === 'cli' && aboutInfo?.cliCanUpdate) ? '<button class="settings-btn wn-get">' + (item.version ? 'Get ' + escapeHtml(item.version) : 'Open the release') + '</button>' : '') +
         (item.command ? '<button class="settings-btn wn-copy">Copy update command</button>' : '') +
         wnLinks(item).map((l, n) => '<button class="settings-btn wn-out" data-n="' + n + '">' + escapeHtml(l.label) + ' <span class="wn-arrow">\u2197</span></button>').join('') +
       '</div>';
     wnPanel.scrollTop = 0;
-    wnPanel.querySelector('.wn-back').addEventListener('click', () => { wnOpenId = null; renderWhatsNew(true); });
+    wnPanel.querySelector('.wn-back').addEventListener('click', () => { wnOpenId = null; wnHold = null; renderWhatsNew(true); });
     const outs = wnLinks(item);
     wnPanel.querySelectorAll('.wn-out').forEach((b) => b.addEventListener('click', () => window.mw.openExternal(outs[Number(b.dataset.n)].url)));
     wnPanel.querySelector('.wn-get')?.addEventListener('click', () => window.mw.openExternal(item.link.url));
+    wnPanel.querySelector('.wn-cliupd')?.addEventListener('click', (e) => { e.currentTarget.disabled = true; e.currentTarget.textContent = 'Updating…'; runCliUpdate(item); });
     wnPanel.querySelector('.wn-copy')?.addEventListener('click', (e) => {
       navigator.clipboard?.writeText(item.command).then(() => { e.currentTarget.textContent = 'Copied'; setTimeout(() => { const b = wnPanel.querySelector('.wn-copy'); if (b) b.textContent = 'Copy update command'; }, 1600); }).catch(() => {});
     });
@@ -1793,10 +1800,12 @@
     for (const it of wnRemote) {
       if (it.kind !== 'update' || !it.version || !AREA_LABEL[it.area]) continue;
       if (it.area === 'app' && realUpd && realUpd.mode !== 'none') continue; // the updater owns the app's update
+      // The app's own terminal copy moves with the app's update, so a notice about it would be noise.
+      if (it.area === 'cli' && (aboutInfo.cliSource === 'bundled' || aboutInfo.cliSource === 'none')) continue;
       if (!best[it.area] || verCmp(it.version, best[it.area].version) > 0) best[it.area] = it;
     }
     return [...real, ...Object.values(best).filter((it) => !have[it.area] || verCmp(it.version, have[it.area]) > 0)
-      .map((it) => ({ area: it.area, from: have[it.area], to: it.version, link: it.link }))];
+      .map((it) => ({ area: it.area, from: have[it.area], to: it.version, link: it.link, ...(it.area === 'cli' && aboutInfo.cliCanUpdate ? { inApp: true } : {}) }))];
   }
 
   // What the updater in the main process reports (see updater/): the signed check, the download and
@@ -1861,7 +1870,7 @@
 
     if (updUi.state === 'busy') {
       row.innerHTML = '<button class="settings-btn au-btn" disabled><span>Updating</span><span class="au-bar"><i style="width:' + updUi.pct + '%"></i></span></button>';
-      note.textContent = 'Downloading. Your sessions, settings and keys stay as they are.';
+      note.textContent = updUi.areas.some((u) => u.cli) ? 'Updating the command line with npm. This takes a moment.' : 'Downloading. Your sessions, settings and keys stay as they are.';
       return;
     }
     if (updUi.state === 'ready') {
@@ -1884,7 +1893,8 @@
       row.innerHTML = chip('app') + chip('core') + chip('cli');
       note.textContent = plain;
     }
-    if (realUpd?.error && pending.some((u) => u.real)) note.textContent = 'The update did not finish: ' + realUpd.error + '. Nothing was changed. Press the button to try again.';
+    if (cliErr && pending.some((u) => u.area === 'cli')) note.textContent = 'The update did not finish: ' + cliErr;
+    else if (realUpd?.error && pending.some((u) => u.real)) note.textContent = 'The update did not finish: ' + realUpd.error + '. Nothing was changed. Press the button to try again.';
     else if (realUpd?.mode === 'manual' && pending.some((u) => u.real)) note.textContent = (realUpd.reason || 'This copy cannot update itself.') + ' The button opens the download.';
     row.querySelector('.has-update[data-update]')?.addEventListener('click', () => startUpdate(pending));
     row.querySelector('#au-all')?.addEventListener('click', () => startUpdate(pending));
@@ -1900,6 +1910,7 @@
       else window.mw.updateStart();
       return;
     }
+    if (pending.some((u) => u.inApp)) { runCliUpdate(); return; }
     if (!pending.every((u) => u.mock)) {
       const link = pending.find((u) => u.link)?.link;
       if (link) window.mw.openExternal(link.url);
@@ -1912,6 +1923,31 @@
       if (updUi.pct >= 100) { clearInterval(tick); updUi.state = 'ready'; }
       renderAboutVersions();
     }, 260);
+  }
+  // The npm-installed terminal version, updated by the app (main.js runs npm with fixed arguments).
+  let cliErr = null;
+  let cliRunning = null;
+  function runCliUpdate(item) {
+    if (cliRunning) return cliRunning;
+    cliErr = null;
+    wnHold = item ? { ...item, _busy: true } : null;
+    updUi = { state: 'busy', pct: 0, areas: [{ area: 'cli', cli: true }] };
+    const tick = setInterval(() => { updUi.pct = Math.min(92, updUi.pct + 3); renderAboutVersions(); }, 400);
+    renderAboutVersions();
+    cliRunning = window.mw.cliUpdate().catch((e) => ({ ok: false, error: String(e?.message || e) })).then(async (r) => {
+      clearInterval(tick);
+      updUi = { state: 'idle', pct: 0, areas: [] };
+      if (r.ok) {
+        wnHold = item ? { ...item, _done: r.version } : null;
+        aboutInfo = { ...aboutInfo, ...(await window.mw.feedbackInfo().catch(() => ({}))) };
+      } else { wnHold = null; cliErr = r.error || 'It did not finish.'; }
+      cliRunning = null;
+      renderAboutVersions();
+      showUpdateDots();
+      if (wnPanel.classList.contains('active')) renderWhatsNew();
+      return r;
+    });
+    return cliRunning;
   }
   // Mockup only: "restarting" applies the new versions and puts the row back to plain chips.
   function restartToUpdate() {
