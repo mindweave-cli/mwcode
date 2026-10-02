@@ -127,8 +127,7 @@ test('an all-users Windows install is updated with the installer\'s own window, 
   const env = { ProgramFiles: 'C:\\Program Files' };
   assert.equal(apply.needsElevation('C:\\Program Files\\mwcode\\mwcode.exe', env), true);
   assert.equal(apply.needsElevation('C:\\Users\\a\\AppData\\Local\\Programs\\mwcode\\mwcode.exe', env), false);
-  assert.deepEqual(apply.winArgs(false), ['--updated', '/S', '--force-run']);
-  assert.deepEqual(apply.winArgs(true), ['--updated']);
+  assert.deepEqual(apply.winArgs(), ['--updated', '/S', '--force-run']);
 });
 
 test('the Mac swap script waits for the app, checks the new one, and puts the old one back on failure', () => {
@@ -294,4 +293,21 @@ test('a manual-install copy is told about the update but downloads nothing itsel
   assert.equal(svc.get().status, 'available');
   assert.equal(svc.get().manualUrl, core.RELEASES_PAGE);
   assert.ok(!seen.some((u) => u.includes('releases/download')));
+});
+
+test('windows: an update never shows the setup window, per-user or all-users', () => {
+  const file = 'C:/up/mwcode-Setup.exe';
+  const helper = 'C:/mw/resources/elevate.exe';
+  const run = (over) => {
+    const calls = [];
+    apply.applyWindows({ file, spawnFn: (f, a) => { calls.push([f, a]); return { unref() {} }; }, exists: () => true, ...over });
+    return calls;
+  };
+  const silent = ['--updated', '/S', '--force-run'];
+  assert.deepEqual(run({ interactive: false }), [[file, silent]]);
+  // All-users: through the elevate helper (one permission prompt), still silent.
+  assert.deepEqual(run({ interactive: true, elevateExe: helper }), [[helper, [file, ...silent]]]);
+  // Only without the helper does the installer's own window remain.
+  assert.deepEqual(run({ interactive: true, elevateExe: helper, exists: () => false }), [[file, ['--updated']]]);
+  assert.deepEqual(run({ interactive: true }), [[file, ['--updated']]]);
 });

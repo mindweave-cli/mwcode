@@ -68,11 +68,18 @@ function bundleProblem(bundle) {
 }
 
 // ── Windows ──────────────────────────────────────────────────────────────
-function winArgs(interactive) {
-  return interactive ? ['--updated'] : ['--updated', '/S', '--force-run'];
+// Always silent: an update never shows the setup window. --force-run opens the new app when it is done.
+function winArgs() {
+  return ['--updated', '/S', '--force-run'];
 }
-function applyWindows({ file, interactive }) {
-  spawn(file, winArgs(interactive), { detached: true, stdio: 'ignore' }).unref();
+// A per-user install is replaced directly. An all-users one (Program Files) needs one Windows permission
+// prompt, which the elevate helper shipped with the app raises before running the same silent install.
+// Only if that helper is missing does it fall back to the installer's own window.
+function applyWindows({ file, interactive, elevateExe, spawnFn = spawn, exists = fs.existsSync }) {
+  const opts = { detached: true, stdio: 'ignore' };
+  if (!interactive) spawnFn(file, winArgs(), opts).unref();
+  else if (elevateExe && exists(elevateExe)) spawnFn(elevateExe, [file, ...winArgs()], opts).unref();
+  else spawnFn(file, ['--updated'], opts).unref();
 }
 
 // ── macOS ────────────────────────────────────────────────────────────────
@@ -132,8 +139,8 @@ function applyAppImage({ file, appImage, pid = process.pid }) {
 }
 
 // Runs the right one. The caller quits the app right afterwards.
-function apply(cap, { file, platform = process.platform }) {
-  if (platform === 'win32') return applyWindows({ file, interactive: cap.interactive });
+function apply(cap, { file, platform = process.platform, elevateExe = process.resourcesPath ? path.join(process.resourcesPath, 'elevate.exe') : null }) {
+  if (platform === 'win32') return applyWindows({ file, interactive: cap.interactive, elevateExe });
   if (platform === 'darwin') return applyMac({ file, bundle: cap.bundle, dir: cap.dir });
   if (platform === 'linux') return applyAppImage({ file, appImage: cap.appImage });
   throw new Error('unsupported system');

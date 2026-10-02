@@ -1774,6 +1774,8 @@
   // it, a real update item's button opens its release page. The real installer plugs in at startUpdate().
   const MOCK_UPDATES_KEY = 'mw:mock-updates';
   const MOCK_INSTALLED_KEY = 'mw:mock-installed';
+  // A mock "installed" version with no mock update running is a leftover; it is cleared.
+  try { if (!(readStore(MOCK_UPDATES_KEY) || '').trim()) mwStore.removeItem(MOCK_INSTALLED_KEY); } catch { /* not stored */ }
   const AREA_LABEL = { app: 'App', core: 'Core', cli: 'CLI' };
   let aboutInfo = null;
   let updUi = { state: 'idle', pct: 0, areas: [] }; // state: idle | busy | ready
@@ -1781,8 +1783,12 @@
   const verBump = (v) => { const p = String(v).split('.').map(Number); return (p[0] || 0) + '.' + ((p[1] || 0) + 1) + '.0'; };
   function installedVersions() {
     if (!aboutInfo) return null;
+    // Only while the old update mockup is switched on. A value left behind from testing it must never
+    // change what a real install shows.
     let mockInstalled = {};
-    try { mockInstalled = JSON.parse(readStore(MOCK_INSTALLED_KEY) || '{}'); } catch { /* none */ }
+    if ((readStore(MOCK_UPDATES_KEY) || '').trim()) {
+      try { mockInstalled = JSON.parse(readStore(MOCK_INSTALLED_KEY) || '{}'); } catch { /* none */ }
+    }
     return { app: aboutInfo.appVersion, core: aboutInfo.coreVersion || aboutInfo.version, cli: aboutInfo.cliVersion || aboutInfo.version, ...mockInstalled };
   }
   // [{ area, from, to, link? }] for each part that has a newer version out.

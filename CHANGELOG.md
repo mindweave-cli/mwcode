@@ -2,6 +2,12 @@
 
 All notable changes to the mwcode desktop app. The engine it runs on has its own changelog in [mindweave](https://github.com/mindweave-cli/mindweave).
 
+## 1.0.2
+
+### Updates
+- Updating on Windows never shows the setup window now. If mwcode is installed for all users, Windows asks for permission once, then the update installs silently and the app reopens by itself. Before, an all-users install showed the full installer.
+- The About page can no longer show a made-up version. A value left behind from testing the old update screen was showing the command line as 2.6.0.
+
 ## 1.0.1
 
 ### Updates
