@@ -20,7 +20,7 @@ window.PROVIDER_INFO = {
       'Anthropic builds the Claude family of models. Through its API it offers several model lines: ' +
       'Opus and Fable for the hardest work, Sonnet as the general-purpose model, and Haiku for ' +
       'fast, low-cost tasks.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: ['Cache write is the 5-minute cache rate, 1.25× input.'],
     links: [
       { label: 'Pricing', url: 'https://platform.claude.com/docs/en/about-claude/pricing' },
@@ -36,9 +36,13 @@ window.PROVIDER_INFO = {
     tagline: 'AI research company · San Francisco, United States · Founded 2015',
     about:
       'OpenAI builds the GPT family of models. Its API offers the GPT-6 generation at three price ' +
-      'points, Astra, Sol and Luna, alongside the earlier GPT-5.6 models.',
-    pricesCheckedAt: '2026-09-23',
-    priceNotes: ['Very long prompts are billed at a higher long-context rate, about double on input.'],
+      'points, Astra, Sol and Luna, with GPT-6.1 Sol as the newest Sol, alongside the earlier ' +
+      'GPT-5.6 models.',
+    pricesCheckedAt: '2026-10-01',
+    priceNotes: [
+      'Very long prompts are billed at a higher long-context rate, about double on input.',
+      'GPT-6 Astra and GPT-6.1 Sol always reason: OpenAI offers no setting that turns reasoning off for them.',
+    ],
     links: [
       { label: 'Pricing', url: 'https://developers.openai.com/api/docs/pricing' },
       { label: 'Models', url: 'https://developers.openai.com/api/docs/models' },
@@ -75,7 +79,7 @@ window.PROVIDER_INFO = {
     about:
       'xAI builds the Grok family of models and offers them through its own API. The models listed ' +
       'here all accept images and can reason before answering.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: ['A request whose prompt reaches 200K tokens is billed at the higher long-context rate for all of its tokens.'],
     links: [
       { label: 'Models & pricing', url: 'https://docs.x.ai/developers/models' },
@@ -91,7 +95,7 @@ window.PROVIDER_INFO = {
     about:
       'DeepSeek develops the DeepSeek family of open-weight models and serves them through its own ' +
       'API. It offers two lines: V4 Pro for harder work and Flash for fast, low-cost tasks.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: [
       'Prices shown are off-peak. During peak hours (01:00–04:00 and 06:00–10:00 UTC, Monday to Friday) every rate doubles.',
     ],
@@ -134,7 +138,7 @@ window.PROVIDER_INFO = {
     about:
       'Kimi is the model family built by Moonshot AI. Its API offers K3 as the flagship, K2.6 as a ' +
       'general model, and K2.7 Code for coding, with a faster, higher-priced HighSpeed version.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: [],
     links: [
       { label: 'Pricing', url: 'https://platform.kimi.ai/docs/pricing/chat' },
@@ -151,7 +155,7 @@ window.PROVIDER_INFO = {
     about:
       'Z.ai builds the GLM family of models. Its API offers the GLM-5 generation, with Flash and ' +
       'FlashX versions for faster, lower-cost work, and the earlier GLM-4.7 models.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: [
       'Prices are for the international endpoint.',
       'Storing cached input is free for a limited time on the newer models.',
@@ -227,7 +231,7 @@ window.PROVIDER_INFO = {
     about:
       'Meta offers its Muse Spark models through the Meta Model API. Each model comes in two versions ' +
       'that differ in price and in how Meta may use your requests.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: [
       'The Contributor versions are cheaper because Meta may use those requests to improve its products. Requests to the standard versions are not used that way.',
     ],
@@ -244,7 +248,7 @@ window.PROVIDER_INFO = {
     about:
       'MiniMax builds text, speech and video models. Its API offers the MiniMax-M3 text model along ' +
       'with the earlier M2.7 and M2.',
-    pricesCheckedAt: '2026-09-23',
+    pricesCheckedAt: '2026-10-01',
     priceNotes: [
       'MiniMax-M3 is shown at its permanent 50% discount; prompts over 512K tokens cost double.',
     ],

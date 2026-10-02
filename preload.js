@@ -72,6 +72,15 @@ contextBridge.exposeInMainWorld('mw', {
     ipcRenderer.on('feed:updated', listener);
     return () => ipcRenderer.removeListener('feed:updated', listener);
   },
+  updateGet: () => ipcRenderer.invoke('update:get'),
+  updateCheck: () => ipcRenderer.invoke('update:check'),
+  updateStart: () => ipcRenderer.invoke('update:start'),
+  updateRestart: () => ipcRenderer.invoke('update:restart'),
+  onUpdateChanged: (cb) => {
+    const listener = (_event, data) => cb(data);
+    ipcRenderer.on('update:changed', listener);
+    return () => ipcRenderer.removeListener('update:changed', listener);
+  },
   approvalRespond: (id, choice) => ipcRenderer.send('approval:respond', { id, choice }),
 
   listShells: () => ipcRenderer.invoke('shells:list'),

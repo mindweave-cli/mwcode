@@ -19,6 +19,13 @@ First public release of mwcode for Windows, Linux and macOS.
 - Keys, sessions and settings are shared with the mindweave command line, so nothing is entered twice.
 - If you already use the command line, your projects are picked up automatically on first launch.
 
+### Updates
+- The app checks for a newer version in the background and tells you when there is one. Nothing is downloaded until you press Update, and it installs when you restart.
+- Every update is signed. The app only installs one signed with the key built into it, and it checks the file against the signed size and fingerprint twice, once after the download and again just before installing. An older release cannot be pushed over a newer one.
+- It updates itself on Windows, on macOS (even though the app is not signed by Apple) and from a Linux AppImage. A Linux .deb, or a Mac app in a folder it cannot change, shows the download page instead.
+- One update covers the app, the core and the command line, because they travel together.
+- Nothing about you is sent when it checks.
+
 ### Settings
 - Providers, MCP servers, Permissions, Rules, Tokens and usage limits, Quick Tabs, Analytics, What's new and About.
 - Launch at login is off by default.

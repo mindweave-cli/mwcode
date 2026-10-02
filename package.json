@@ -22,7 +22,7 @@
     "dist:linux": "node build/stage.js && node build/assemble-linux.js && electron-builder --linux deb AppImage --x64 --prepackaged dist/linux-unpacked",
     "dist:mac": "node build/stage.js darwin arm64 && node build/assemble-mac.js arm64",
     "check:styles": "node scripts/check-styles.mjs",
-    "test": "node --test ui-store.test.mjs news/feed.test.mjs"
+    "test": "node --test ui-store.test.mjs news/feed.test.mjs updater/update.test.mjs updater/macSwap.test.mjs"
   },
   "dependencies": {
     "koffi": "^3.3.2",

@@ -14,7 +14,7 @@ const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...proce
 
 // What the running app needs, and nothing else (no tests, notes, prototypes or screenshots).
 const FILES = ['main.js', 'preload.js', 'renderer.js', 'index.html', 'styles.css', 'providerInfo.js', 'recordings.js', 'ui-store.js'];
-const DIRS = ['assets', 'news'];
+const DIRS = ['assets', 'news', 'updater'];
 const SKIP = /\.test\.m?js$|^tools$/;
 
 fs.rmSync(stage, { recursive: true, force: true });

@@ -1784,14 +1784,35 @@
     if (!have) return [];
     const mock = (readStore(MOCK_UPDATES_KEY) || '').split(',').map((x) => x.trim()).filter((x) => AREA_LABEL[x]);
     if (mock.length) return mock.map((area) => ({ area, from: have[area], to: verBump(have[area]), mock: true }));
+    // The app's own update, from the updater in the main process (signed, checked, installs itself).
+    // The core and the command line travel inside the app, so this one update covers all three.
+    const real = realUpd && realUpd.version && ['available', 'downloading', 'ready', 'error'].includes(realUpd.status)
+      ? [{ area: 'app', from: have.app, to: realUpd.version, real: true, manual: realUpd.mode === 'manual', link: { url: realUpd.manualUrl } }]
+      : [];
     const best = {};
     for (const it of wnRemote) {
       if (it.kind !== 'update' || !it.version || !AREA_LABEL[it.area]) continue;
+      if (it.area === 'app' && realUpd && realUpd.mode !== 'none') continue; // the updater owns the app's update
       if (!best[it.area] || verCmp(it.version, best[it.area].version) > 0) best[it.area] = it;
     }
-    return Object.values(best).filter((it) => !have[it.area] || verCmp(it.version, have[it.area]) > 0)
-      .map((it) => ({ area: it.area, from: have[it.area], to: it.version, link: it.link }));
+    return [...real, ...Object.values(best).filter((it) => !have[it.area] || verCmp(it.version, have[it.area]) > 0)
+      .map((it) => ({ area: it.area, from: have[it.area], to: it.version, link: it.link }))];
   }
+
+  // What the updater in the main process reports (see updater/): the signed check, the download and
+  // its progress. null until the first answer, and { mode: 'none' } for a copy that is not installed.
+  let realUpd = null;
+  function applyRealUpdate(s) {
+    if (!s) return;
+    realUpd = s;
+    if (s.status === 'downloading') updUi = { state: 'busy', pct: s.pct || 0, areas: [{ area: 'app', to: s.version, real: true }] };
+    else if (s.status === 'ready') updUi = { state: 'ready', pct: 100, areas: [{ area: 'app', to: s.version, real: true }] };
+    else if (updUi.areas.some((u) => u.real)) updUi = { state: 'idle', pct: 0, areas: [] };
+    if (typeof renderAboutVersions === 'function') renderAboutVersions();
+    refreshUpdateChip();
+  }
+  window.mw?.updateGet?.().then(applyRealUpdate).catch(() => {});
+  window.mw?.onUpdateChanged?.(applyRealUpdate);
 
   // The box in the top row, next to Run: shows when any update is out, and takes you to About.
   function refreshUpdateChip() {
@@ -1863,6 +1884,8 @@
       row.innerHTML = chip('app') + chip('core') + chip('cli');
       note.textContent = plain;
     }
+    if (realUpd?.error && pending.some((u) => u.real)) note.textContent = 'The update did not finish: ' + realUpd.error + '. Nothing was changed. Press the button to try again.';
+    else if (realUpd?.mode === 'manual' && pending.some((u) => u.real)) note.textContent = (realUpd.reason || 'This copy cannot update itself.') + ' The button opens the download.';
     row.querySelector('.has-update[data-update]')?.addEventListener('click', () => startUpdate(pending));
     row.querySelector('#au-all')?.addEventListener('click', () => startUpdate(pending));
   }
@@ -1870,6 +1893,13 @@
   // The one place a real installer goes. Today: the pretend download for the mockup, and for a real
   // update item, its release page.
   function startUpdate(pending) {
+    const real = pending.find((u) => u.real);
+    if (real) {
+      // Installs itself where it can; otherwise the release page opens (a .deb, a read-only folder...).
+      if (real.manual) window.mw.openExternal(real.link.url);
+      else window.mw.updateStart();
+      return;
+    }
     if (!pending.every((u) => u.mock)) {
       const link = pending.find((u) => u.link)?.link;
       if (link) window.mw.openExternal(link.url);
@@ -1885,6 +1915,7 @@
   }
   // Mockup only: "restarting" applies the new versions and puts the row back to plain chips.
   function restartToUpdate() {
+    if (updUi.areas.some((u) => u.real)) { window.mw.updateRestart(); return; }
     const done = updUi.areas;
     let installed = {};
     try { installed = JSON.parse(readStore(MOCK_INSTALLED_KEY) || '{}'); } catch { /* none */ }
@@ -5070,8 +5101,9 @@
   const TEST_STEP_VERBS = {
     look: 'Looking at', click: 'Clicking', type: 'Typing', key: 'Pressing', scroll: 'Scrolling',
     hover: 'Hovering over', back: 'Going back', close: 'Closing',
+    wait: 'Waiting for', resize: 'Resizing', inspect: 'Inspecting', steps: 'Running',
   };
-  const TEST_START_VERB = { Look: 'look', Click: 'click', Type: 'type', Key: 'key', Scroll: 'scroll', Hover: 'hover', Back: 'back', Close: 'close' };
+  const TEST_START_VERB = { Look: 'look', Click: 'click', Type: 'type', Key: 'key', Scroll: 'scroll', Hover: 'hover', Back: 'back', Wait: 'wait', Resize: 'resize', Inspect: 'inspect', Steps: 'steps', Close: 'close' };
   let turnTest = null; // this turn's box, while the turn lasts
   const testCalls = new Map(); // tool call id → { test, run, step } or { close }
   const liveToTest = new Map(); // live id → box
@@ -5350,6 +5382,8 @@
     if (action === 'key') return `<b>Pressing</b> ${what(input ?? 'a key')}${target ? ` ${what('in')} ${el(target)}` : ''}`;
     if (action === 'scroll') return `<b>Scrolling</b> ${what(input ?? 'down')}${target ? ` ${what('in')} ${el(target)}` : ''}`;
     if (action === 'back') return '<b>Going back</b>';
+    if (action === 'wait') return `<b>Waiting for</b> ${what(`“${input ?? ''}”`)}`;
+    if (action === 'resize') return `<b>Resizing</b> ${what(`the view to ${input ?? 'a new size'}`)}`;
     return `<b>${escapeHtml(verb)}</b> ${target ? el(target) : ''}`;
   }
 
@@ -5517,12 +5551,59 @@
     }
     const step = addStepRow(test, run, stepLineHtml(action, null, null, e.arg || ''), true);
     drawRunHead(test);
-    testCalls.set(e.id, { test, run, step });
+    testCalls.set(e.id, { test, run, step, batch: e.name === 'Steps', rows: [] });
+  }
+
+  /** A call that runs several steps shows each one as it happens, one row after another. */
+  function batchProgress(call, text) {
+    const lines = String(text).split('\n').filter((l) => /^\d+\. /.test(l));
+    for (let i = call.rows.length; i < lines.length; i++) {
+      dropBatchHead(call);
+      const bad = /^\d+\. Could not/.test(lines[i]);
+      const row = addStepRow(call.test, call.run, `<span class="what">${escapeHtml(lines[i].replace(/^\d+\. /, ''))}</span>`, true);
+      const mark = row.row.querySelector('.lt-st');
+      mark.className = `lt-st ${bad ? 'bad' : 'ok'}`;
+      mark.textContent = bad ? '✕' : '✓';
+      row.ok = !bad;
+      call.rows.push(row);
+    }
+    if (call.test.view === call.run) { drawTestMarks(call.test); drawRunHead(call.test); }
+  }
+
+  /** The row that said "4 steps" gives way to the steps themselves. */
+  function dropBatchHead(call) {
+    if (!call.step) return;
+    call.step.row.remove();
+    call.run.steps = call.run.steps.filter((x) => x !== call.step);
+    call.step = null;
+  }
+
+  /** The finished batch: every step drawn as it was, with why it failed. */
+  function finishBatch(call, e) {
+    const { test, run } = call;
+    const subs = e.ui?.steps;
+    if (!subs?.length) { // nothing to draw it from: the one row says how it went
+      if (call.step) applyStepResult(test, run, call.step, e.ui, e.summary);
+      return;
+    }
+    dropBatchHead(call);
+    subs.forEach((s, i) => {
+      const row = call.rows[i] || addStepRow(test, run, '', !call.replay);
+      call.rows[i] = row;
+      setStepResult(test, run, row, { live: e.ui.live, action: s.action, target: s.target, input: s.input, ok: s.ok, why: s.why, app: e.ui.app, startedAt: e.ui.startedAt, endedAt: e.ui.endedAt }, undefined);
+    });
+    testAssignLive(test, run, e.ui.live);
+    if (e.ui.app) test.argEl.textContent = e.ui.app;
+    if (e.ui.errors?.length) {
+      const last = [...call.rows].reverse().find((r) => r.ok);
+      if (last) flipStep(test, run, last, e.ui.errors[0]);
+    }
   }
 
   /** A step still under way says what it is waiting on (an app still building). */
   function testProgress(e) {
     const call = testCalls.get(e.id);
+    if (call?.batch) { batchProgress(call, e.text); return; }
     if (!call?.step) return;
     const main = call.step.row.querySelector('.lt-main');
     let line = main.querySelector('.lt-wait');
@@ -5541,6 +5622,10 @@
     testCalls.delete(e.id);
     if (call.close) {
       closeRun('close');
+      return true;
+    }
+    if (call.batch) {
+      finishBatch(call, e);
       return true;
     }
     const { test, run, step } = call;
@@ -5826,6 +5911,10 @@
     if (action === 'close') { closeRun(); return; }
     const test = testForStep(e.ui?.app || e.arg, false, false);
     const run = test.active;
+    if (action === 'steps') {
+      finishBatch({ test, run, step: null, rows: [], replay: true }, e);
+      return;
+    }
     const step = addStepRow(test, run, stepLineHtml(action, null, null, e.arg || ''), false);
     applyStepResult(test, run, step, e.ui, e.summary);
   }
@@ -7783,7 +7872,7 @@
     if (!a) return;
     anSwitch.classList.toggle('on', a.enabled);
     anSwitch.setAttribute('aria-checked', String(a.enabled));
-    anDesc.textContent = a.enabled ? 'On. Sent once each time Mindweave opens' : 'Off. Nothing is sent';
+    anDesc.textContent = a.enabled ? 'On. Sent once each time Mindweave opens' : a.paused ? 'Off for now. We are building a better way to count, and nothing is sent' : 'Off. Nothing is sent';
   }
   window.mw?.getAnalytics?.().then(applyAnalytics);
   // The generic switch handler has already flipped it; what the engine saved is

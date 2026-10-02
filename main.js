@@ -50,6 +50,10 @@ let uiStore = null;
 const { createFeedService } = require('./news/feedService');
 const { PUBLIC_KEY: NEWS_PUBLIC_KEY } = require('./news/feedKey');
 let newsFeed = null;
+// The app's own updates: a signed manifest, a checked download, installed on restart (see updater/).
+const { createUpdateService } = require('./updater/updateService');
+const { PUBLIC_KEY: UPDATE_PUBLIC_KEY } = require('./updater/updateKey');
+let updater = null;
 // What the agent saw while testing an app, kept for replay (see recordings.js).
 const recorder = createRecorder(path.join(app.getPath('userData'), 'recordings'));
 const MAX_RECENT_PROJECTS = 100;
@@ -988,12 +992,12 @@ function createWindow() {
   // with the CLI, so switching it off here switches it off there too.
   ipcMain.handle('analytics:get', async () => {
     const { analyticsEnabled } = await turnRunner();
-    return { enabled: analyticsEnabled() };
+    return { enabled: analyticsEnabled(), paused: true };
   });
   ipcMain.handle('analytics:set', async (_e, on) => {
     const { analyticsEnabled, setAnalyticsEnabled } = await turnRunner();
-    setAnalyticsEnabled(!!on);
-    return { enabled: analyticsEnabled() };
+    setAnalyticsEnabled(!!on); // refused while the count is paused
+    return { enabled: analyticsEnabled(), paused: true };
   });
 
   // Feedback to the maintainer: the CLI's /feedback. The engine builds the payload
@@ -1849,13 +1853,19 @@ app.whenReady().then(async () => {
   uiStore = createUiStore(path.join(app.getPath('userData'), 'ui-state.json'));
   ipcMain.on('store:load', (e) => { e.returnValue = uiStore.all(); });
   ipcMain.on('store:set', (e, k, v) => { e.returnValue = uiStore.set(k, v); });
+  // Updates: the window only ever sees this small state and asks for the next step.
+  ipcMain.handle('update:get', () => (updater ? updater.get() : { status: 'none', mode: 'none' }));
+  ipcMain.handle('update:check', () => (updater ? updater.check({ force: true }) : { status: 'none', mode: 'none' }));
+  ipcMain.handle('update:start', () => (updater ? updater.download() : { status: 'none', mode: 'none' }));
+  ipcMain.handle('update:restart', () => (updater ? updater.restart() : { status: 'none', mode: 'none' }));
+
   ipcMain.on('store:remove', (e, k) => { e.returnValue = uiStore.remove(k); });
   createWindow();
   void recorder.prune(); // old recordings, in the background
 
   const { sendAnalyticsPing, appVersion } = await core;
   // The same launch ping the CLI sends: a random id and the version, nothing else,
-  // skipped when switched off in Settings > Analytics. Fire and forget.
+  // a no-op while the count is paused in the core. Fire and forget.
   sendAnalyticsPing(appVersion());
 
   newsFeed = createFeedService({
@@ -1868,6 +1878,20 @@ app.whenReady().then(async () => {
   });
   feedReady(newsFeed);
   newsFeed.start();
+
+  updater = createUpdateService({
+    dir: app.getPath('userData'),
+    current: app.getVersion(),
+    publicKey: UPDATE_PUBLIC_KEY,
+    packaged: app.isPackaged,
+    onChange: (state) => {
+      for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('update:changed', state);
+    },
+    // The installer or swap script waits for this process to be gone, so it really quits (the Mac red
+    // button only hides the window).
+    quit: () => { quitting = true; app.quit(); },
+  });
+  updater.start();
 
   // macOS: the menu bar, without which Cmd+C, Cmd+V, Cmd+Q and the rest do nothing.
   if (process.platform === 'darwin') {

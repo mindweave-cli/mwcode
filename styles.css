@@ -459,8 +459,9 @@ svg{display:block}
 /* Consecutive discovery calls (reads, searches) fold into one block instead
    of each filling a full row — same list-of-rows treatment as a sub-agent's
    nested calls, just at the top level. */
-.tool-group-list{display:flex;flex-direction:column;gap:4px}
-.tool-group-row{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:11.5px}
+/* Steps of one group stack two or three to a line (as many as fit), each keeping its own dot. */
+.tool-group-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 16px}
+.tool-group-row{display:flex;align-items:center;gap:6px;min-width:0;color:var(--dim);font-size:11.5px}
 .tool-group-row .dot{width:5px;height:5px;border-radius:50%;background:var(--dot-white);flex:none}
 .tool-group-row .dot.pulsing{animation:dotblink 1.1s ease-in-out infinite}
 .tool-group-row.err .dot{background:var(--bad)}
