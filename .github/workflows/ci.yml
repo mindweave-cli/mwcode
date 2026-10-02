@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - name: Every script parses
-        run: for f in main.js preload.js renderer.js providerInfo.js recordings.js ui-store.js build/*.js news/*.js; do node --check "$f"; done
+        run: for f in main.js preload.js renderer.js providerInfo.js recordings.js ui-store.js build/*.js news/*.js updater/*.js; do node --check "$f"; done
       - name: Tests
         run: npm test
       - name: Styles follow DESIGN.md

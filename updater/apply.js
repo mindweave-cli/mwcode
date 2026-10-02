@@ -48,10 +48,11 @@ function capability({ platform = process.platform, packaged, execPath = process.
 // A per-user install lives under the user's own folders; an all-users one under Program Files and
 // needs a permission prompt to change.
 function needsElevation(execPath, env) {
-  const p = path.resolve(execPath).toLowerCase();
+  // Windows paths, judged as Windows paths whatever system this runs on.
+  const p = path.win32.resolve(execPath).toLowerCase();
   return [env.ProgramFiles, env['ProgramFiles(x86)'], env.ProgramW6432]
     .filter(Boolean)
-    .some((root) => p.startsWith(path.resolve(root).toLowerCase() + path.sep));
+    .some((root) => p.startsWith(path.win32.resolve(root).toLowerCase() + path.win32.sep));
 }
 
 function bundleProblem(bundle) {
